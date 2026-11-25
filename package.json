@@ -1,0 +1,19 @@
+{
+  "name": "color-blindness-simulator",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Physiologically-based color vision deficiency simulator for images and live camera (Machado 2009, Brettel 1997).",
+  "scripts": {
+    "start": "node scripts/serve.js",
+    "check": "node --check assets/js/cvd.js && node --check assets/js/gl-renderer.js && node --check assets/js/app.js",
+    "test": "npm run check && npm run test:unit && npm run test:e2e",
+    "test:unit": "node --test \"tests/unit/*.test.js\"",
+    "test:e2e": "node --test --test-concurrency=1 \"tests/e2e/*.test.js\""
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
