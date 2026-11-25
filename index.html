@@ -2,967 +2,238 @@
 <html dir="rtl" lang="he">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="סימולטור עיוורון צבעים מדויק - העלו תמונה וצפו כיצד היא נראית לאנשים עם פרוטנופיה, דאוטרנופיה, טריטנופיה ואכרומטופסיה.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>סימולטור עיוורון צבעים</title>
+    <meta name="description" content="סימולטור עיוורון צבעים מדויק מבוסס מודלים פיזיולוגיים (Machado 2009, Brettel 1997): העלו תמונה או כוונו את מצלמת הטלפון וראו בזמן אמת כיצד העולם נראה עם פרוטן, דאוטרן, טריטן ומונוכרומטיות.">
+    <meta name="theme-color" content="#0a0e1a" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#eef2fb" media="(prefers-color-scheme: light)">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="סימולטור עיוורון צבעים">
+    <meta property="og:description" content="ראו את העולם כפי שאחרים רואים אותו — בתמונה או דרך מצלמת הטלפון, בזמן אמת.">
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
     <script>
         (function () {
+            var theme = 'dark';
             try {
                 var saved = localStorage.getItem('cbSimTheme');
                 var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-                document.documentElement.setAttribute('data-theme', saved || (prefersLight ? 'light' : 'dark'));
-            } catch (e) {
-                document.documentElement.setAttribute('data-theme', 'dark');
-            }
+                theme = saved === 'light' || saved === 'dark' ? saved : (prefersLight ? 'light' : 'dark');
+            } catch (e) { /* storage blocked */ }
+            document.documentElement.setAttribute('data-theme', theme);
         })();
     </script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        [hidden] {
-            display: none !important;
-        }
-
-        :root {
-            --bg-grid-size: 42px;
-        }
-
-        :root[data-theme="dark"] {
-            color-scheme: dark;
-            --bg-1: #0a0e1a;
-            --bg-2: #131a2e;
-            --bg-3: #0d1424;
-            --panel-bg: rgba(255, 255, 255, 0.05);
-            --panel-border: rgba(79, 172, 254, 0.2);
-            --text-primary: #eef1fa;
-            --text-secondary: rgba(238, 241, 250, 0.62);
-            --accent-1: #00f2fe;
-            --accent-2: #4facfe;
-            --accent-contrast: #05121f;
-            --accent-glow: rgba(79, 172, 254, 0.4);
-            --danger-bg: rgba(255, 90, 90, 0.14);
-            --danger-border: rgba(255, 90, 90, 0.4);
-            --danger-text: #ff9b9b;
-            --grid-line: rgba(79, 172, 254, 0.07);
-            --option-bg: #131a2e;
-            --scrollbar: rgba(79, 172, 254, 0.35);
-            --spinner-overlay: rgba(10, 14, 26, 0.8);
-            --shadow-color: rgba(0, 0, 0, 0.35);
-        }
-
-        :root[data-theme="light"] {
-            color-scheme: light;
-            --bg-1: #eef2fb;
-            --bg-2: #e3ebfb;
-            --bg-3: #f5f8fd;
-            --panel-bg: rgba(255, 255, 255, 0.72);
-            --panel-border: rgba(37, 99, 235, 0.2);
-            --text-primary: #0f172a;
-            --text-secondary: rgba(15, 23, 42, 0.62);
-            --accent-1: #0284c7;
-            --accent-2: #2563eb;
-            --accent-contrast: #ffffff;
-            --accent-glow: rgba(37, 99, 235, 0.25);
-            --danger-bg: rgba(220, 38, 38, 0.08);
-            --danger-border: rgba(220, 38, 38, 0.35);
-            --danger-text: #b91c1c;
-            --grid-line: rgba(37, 99, 235, 0.07);
-            --option-bg: #ffffff;
-            --scrollbar: rgba(37, 99, 235, 0.35);
-            --spinner-overlay: rgba(238, 242, 251, 0.85);
-            --shadow-color: rgba(15, 23, 42, 0.15);
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            min-height: 100vh;
-            background-color: var(--bg-1);
-            background-image:
-                linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 55%, var(--bg-3) 100%),
-                linear-gradient(var(--grid-line) 1px, transparent 1px),
-                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-            background-size: 100% 100%, var(--bg-grid-size) var(--bg-grid-size), var(--bg-grid-size) var(--bg-grid-size);
-            background-attachment: fixed;
-            color: var(--text-primary);
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        ::selection {
-            background: var(--accent-2);
-            color: var(--accent-contrast);
-        }
-
-        ::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--scrollbar);
-            border-radius: 10px;
-        }
-
-        .container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            max-width: 1400px;
-            width: 100%;
-            margin: 0 auto;
-            gap: 1rem;
-        }
-
-        header {
-            position: relative;
-            text-align: center;
-            padding: 0.25rem 3rem;
-        }
-
-        h1 {
-            font-size: clamp(1.5rem, 4vw, 2.5rem);
-            background: linear-gradient(to right, var(--accent-1), var(--accent-2));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 14px var(--accent-glow));
-            letter-spacing: 0.01em;
-        }
-
-        .subtitle {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            margin-top: 0.35rem;
-        }
-
-        .theme-toggle {
-            position: absolute;
-            inset-inline-start: 0;
-            top: 0;
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            border: 1px solid var(--panel-border);
-            background: var(--panel-bg);
-            backdrop-filter: blur(10px);
-            color: var(--text-primary);
-            font-size: 1.1rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-
-        .theme-toggle:hover {
-            transform: scale(1.08);
-            box-shadow: 0 0 18px var(--accent-glow);
-        }
-
-        .controls {
-            background: var(--panel-bg);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 1rem;
-            box-shadow: 0 8px 32px var(--shadow-color);
-            border: 1px solid var(--panel-border);
-            transition: box-shadow 0.3s ease, transform 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 1rem;
-            justify-content: center;
-            width: 100%;
-        }
-
-        .controls:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 40px var(--shadow-color);
-        }
-
-        input[type="file"].visually-hidden {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
-        }
-
-        .file-input-label {
-            background: linear-gradient(45deg, var(--accent-2) 0%, var(--accent-1) 100%);
-            color: var(--accent-contrast);
-            padding: 8px 16px;
-            border-radius: 50px;
-            cursor: pointer;
-            display: inline-block;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            font-size: 0.9rem;
-            white-space: nowrap;
-        }
-
-        .file-input-label:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 18px var(--accent-glow);
-        }
-
-        .control-group {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        select {
-            padding: 8px 16px;
-            border-radius: 12px;
-            border: 1px solid var(--panel-border);
-            background: var(--panel-bg);
-            color: var(--text-primary);
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            min-width: 200px;
-        }
-
-        select:hover {
-            border-color: var(--accent-2);
-        }
-
-        option {
-            background: var(--option-bg);
-            color: var(--text-primary);
-        }
-
-        .slider-container {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.9rem;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        input[type="range"] {
-            -webkit-appearance: none;
-            width: clamp(150px, 30vw, 200px);
-            height: 6px;
-            background: var(--panel-border);
-            border-radius: 3px;
-            outline: none;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
-            background: linear-gradient(45deg, var(--accent-2) 0%, var(--accent-1) 100%);
-            border-radius: 50%;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 0 rgba(0, 0, 0, 0);
-        }
-
-        input[type="range"]::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
-            box-shadow: 0 0 12px var(--accent-glow);
-        }
-
-        input[type="range"]::-moz-range-thumb {
-            width: 18px;
-            height: 18px;
-            border: none;
-            background: linear-gradient(45deg, var(--accent-2) 0%, var(--accent-1) 100%);
-            border-radius: 50%;
-            cursor: pointer;
-        }
-
-        .severity-label {
-            background: linear-gradient(45deg, var(--accent-2) 0%, var(--accent-1) 100%);
-            color: var(--accent-contrast);
-            padding: 4px 12px;
-            border-radius: 15px;
-            min-width: 60px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 0.9rem;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .toggle-container {
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            font-size: 0.9rem;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .toggle-container input {
-            accent-color: var(--accent-2);
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border-radius: 50px;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-            white-space: nowrap;
-        }
-
-        .btn-primary {
-            background: linear-gradient(45deg, var(--accent-2) 0%, var(--accent-1) 100%);
-            color: var(--accent-contrast);
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            transform: scale(1.05);
-            box-shadow: 0 5px 18px var(--accent-glow);
-        }
-
-        .btn-secondary {
-            background: var(--panel-bg);
-            color: var(--text-primary);
-            border: 1px solid var(--panel-border);
-        }
-
-        .btn-secondary:hover:not(:disabled) {
-            border-color: var(--accent-2);
-        }
-
-        .btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        button:focus-visible,
-        select:focus-visible,
-        input:focus-visible,
-        label.dropzone:focus-within {
-            outline: 2px solid var(--accent-2);
-            outline-offset: 2px;
-        }
-
-        .file-info {
-            text-align: center;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-        }
-
-        .error-message {
-            background: var(--danger-bg);
-            border: 1px solid var(--danger-border);
-            color: var(--danger-text);
-            padding: 0.6rem 1rem;
-            border-radius: 10px;
-            text-align: center;
-            font-size: 0.9rem;
-        }
-
-        .dropzone {
-            border: 2px dashed var(--panel-border);
-            border-radius: 15px;
-            padding: 3rem 1.5rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: var(--panel-bg);
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 240px;
-        }
-
-        .dropzone.dragover,
-        .dropzone:hover {
-            border-color: var(--accent-2);
-            box-shadow: 0 0 24px var(--accent-glow) inset;
-        }
-
-        .dropzone-icon {
-            font-size: 3rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .dropzone-content p {
-            margin-top: 0.25rem;
-        }
-
-        .dropzone-hint {
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-        }
-
-        .image-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
-            gap: 1rem;
-            flex: 1;
-        }
-
-        .tech-frame {
-            background-image:
-                linear-gradient(var(--accent-1), var(--accent-1)), linear-gradient(var(--accent-1), var(--accent-1)),
-                linear-gradient(var(--accent-1), var(--accent-1)), linear-gradient(var(--accent-1), var(--accent-1)),
-                linear-gradient(var(--accent-1), var(--accent-1)), linear-gradient(var(--accent-1), var(--accent-1)),
-                linear-gradient(var(--accent-1), var(--accent-1)), linear-gradient(var(--accent-1), var(--accent-1));
-            background-size: 14px 2px, 2px 14px, 14px 2px, 2px 14px, 14px 2px, 2px 14px, 14px 2px, 2px 14px;
-            background-position: top right, top right, top left, top left, bottom right, bottom right, bottom left, bottom left;
-            background-repeat: no-repeat;
-            background-origin: border-box;
-            opacity: 1;
-        }
-
-        .image-box {
-            position: relative;
-            background: var(--panel-bg);
-            border-radius: 15px;
-            padding: 1rem;
-            transition: all 0.3s ease;
-            border: 1px solid var(--panel-border);
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        .image-box:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px var(--shadow-color);
-        }
-
-        .image-box h3 {
-            margin-bottom: 0.5rem;
-            color: var(--accent-2);
-            font-size: 1.1rem;
-        }
-
-        canvas {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            border-radius: 8px;
-            box-shadow: 0 4px 16px var(--shadow-color);
-        }
-
-        .spinner {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            background: var(--spinner-overlay);
-            border-radius: 8px;
-            font-size: 0.9rem;
-        }
-
-        .spinner-circle {
-            width: 32px;
-            height: 32px;
-            border: 3px solid var(--panel-border);
-            border-top-color: var(--accent-1);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .compare-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 1rem;
-        }
-
-        .compare-box {
-            background: var(--panel-bg);
-            border-radius: 12px;
-            padding: 0.75rem;
-            border: 1px solid var(--panel-border);
-            text-align: center;
-        }
-
-        .compare-box h4 {
-            color: var(--accent-2);
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
-
-        .compare-box canvas {
-            width: 100%;
-            border-radius: 6px;
-        }
-
-        footer {
-            text-align: center;
-            color: var(--text-secondary);
-            font-size: 0.8rem;
-            padding: 0.5rem 0;
-        }
-
-        @media (max-width: 768px) {
-            body {
-                padding: 0.5rem;
-            }
-
-            header {
-                padding: 0.25rem 2.75rem;
-            }
-
-            .controls {
-                padding: 0.75rem;
-                gap: 0.75rem;
-            }
-
-            .file-input-label {
-                padding: 6px 12px;
-                font-size: 0.85rem;
-            }
-
-            select {
-                padding: 6px 12px;
-                font-size: 0.85rem;
-                min-width: 180px;
-            }
-
-            .image-container {
-                gap: 0.75rem;
-            }
-
-            .image-box {
-                padding: 0.75rem;
-            }
-
-            .dropzone {
-                padding: 2rem 1rem;
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            * {
-                transition-duration: 0.01ms !important;
-                animation-duration: 0.01ms !important;
-            }
-        }
-    </style>
-
-<meta name="google-site-verification" content="apbq5rAL_hDCEx7SxoPOHubZCVnW3Q7FeDQe-6W_1fM" />
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="assets/css/app.css">
+    <meta name="google-site-verification" content="apbq5rAL_hDCEx7SxoPOHubZCVnW3Q7FeDQe-6W_1fM" />
 </head>
 <body>
-    <div class="container">
-        <header>
-            <button type="button" id="themeToggle" class="theme-toggle" aria-label="החלף מצב תצוגה">🌙</button>
-            <h1>סימולטור עיוורון צבעים</h1>
-            <p class="subtitle">העלו תמונה וגלו כיצד היא נראית לאנשים עם סוגים שונים של עיוורון צבעים</p>
+    <svg xmlns="http://www.w3.org/2000/svg" class="sprite" aria-hidden="true">
+        <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3.2"/></symbol>
+        <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="9.5" r="1.8"/><path d="M21 16l-5.2-5.2L5 20"/></symbol>
+        <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l1.6-2.4h6.8L17 8h3a1 1 0 0 1 1 1v9.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.3" r="3.6"/></symbol>
+        <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"/></symbol>
+        <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"/></symbol>
+        <symbol id="i-split" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M12 2.5v19"/></symbol>
+        <symbol id="i-columns" viewBox="0 0 24 24"><rect x="3" y="5" width="7.5" height="14" rx="1.8"/><rect x="13.5" y="5" width="7.5" height="14" rx="1.8"/></symbol>
+        <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/></symbol>
+        <symbol id="i-switch" viewBox="0 0 24 24"><path d="M20 7.5h-11a4.5 4.5 0 0 0-4.5 4.5M16.5 4 20 7.5 16.5 11M4 16.5h11a4.5 4.5 0 0 0 4.5-4.5M7.5 20 4 16.5 7.5 13"/></symbol>
+        <symbol id="i-shutter" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5" fill="currentColor" stroke="none"/></symbol>
+        <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="none"/></symbol>
+        <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11" rx="2" fill="currentColor" stroke="none"/></symbol>
+        <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></symbol>
+        <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
+        <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.1"/></symbol>
+        <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7"/></symbol>
+        <symbol id="i-expand" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+        <symbol id="i-drag" viewBox="0 0 24 24"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></symbol>
+        <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></symbol>
+        <symbol id="i-compare" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M12 5v14M6 15l2-3 2 3M14.5 9.5h3"/></symbol>
+    </svg>
+
+    <a class="skip-link" href="#main">דלג לתוכן הראשי</a>
+
+    <div class="app">
+        <header class="appbar">
+            <a class="brand" href="./">
+                <span class="brand-mark" aria-hidden="true"><svg><use href="#i-eye"/></svg></span>
+                <span class="brand-text">
+                    <span class="brand-title">סימולטור עיוורון צבעים</span>
+                    <span class="brand-sub">ראו את העולם כפי שאחרים רואים אותו</span>
+                </span>
+            </a>
+            <div class="appbar-actions">
+                <a class="icon-btn" href="#about" aria-label="על הסימולציה" title="על הסימולציה"><svg aria-hidden="true"><use href="#i-info"/></svg></a>
+                <button type="button" id="themeToggle" class="icon-btn" aria-label="החלפת מצב תצוגה" title="החלפת מצב תצוגה">
+                    <svg class="show-dark" aria-hidden="true"><use href="#i-sun"/></svg>
+                    <svg class="show-light" aria-hidden="true"><use href="#i-moon"/></svg>
+                </button>
+            </div>
         </header>
 
-        <div class="controls">
-            <div class="file-input-container">
-                <label class="file-input-label" for="imageInput">בחר תמונה</label>
-                <input type="file" id="imageInput" class="visually-hidden" accept="image/*">
+        <main id="main" class="workspace">
+            <div class="mode-switch" role="tablist" aria-label="מצב עבודה">
+                <button type="button" role="tab" id="tab-image" class="mode-tab" aria-controls="panel-image" aria-selected="true">
+                    <svg aria-hidden="true"><use href="#i-image"/></svg><span>תמונה</span>
+                </button>
+                <button type="button" role="tab" id="tab-camera" class="mode-tab" aria-controls="panel-camera" aria-selected="false" tabindex="-1">
+                    <svg aria-hidden="true"><use href="#i-camera"/></svg><span>מצלמה חיה</span><span class="live-dot" aria-hidden="true"></span>
+                </button>
             </div>
 
-            <div class="control-group">
-                <label for="colorBlindType">סוג עיוורון צבעים:</label>
-                <select id="colorBlindType">
-                    <option value="normal">ראייה רגילה</option>
-                    <option value="protanopia">פרוטנופיה (חוסר רגישות לאדום)</option>
-                    <option value="deuteranopia">דאוטרנופיה (חוסר רגישות לירוק)</option>
-                    <option value="tritanopia">טריטנופיה (חוסר רגישות לכחול)</option>
-                    <option value="achromatopsia">אכרומטופסיה (עיוורון צבעים מלא)</option>
-                </select>
+            <div class="workspace-grid">
+                <aside class="sidebar card" aria-label="הגדרות סימולציה">
+                    <section class="card-section">
+                        <h2 class="section-title" id="typeTitle">סוג ראיית הצבעים</h2>
+                        <div class="type-list" id="typeList" role="radiogroup" aria-labelledby="typeTitle"></div>
+                    </section>
+
+                    <section class="card-section">
+                        <div class="severity-head">
+                            <label for="severity" class="section-title">חומרה</label>
+                            <output id="severityValue" for="severity" class="severity-value">100%</output>
+                        </div>
+                        <input type="range" id="severity" class="range" min="0" max="100" step="1" value="100" aria-describedby="severityName">
+                        <div class="range-scale" aria-hidden="true"><span>ראייה תקינה</span><span>חלקית</span><span>מלאה</span></div>
+                        <p id="severityName" class="clinical" aria-live="polite"></p>
+                    </section>
+
+                    <details class="card-section advanced" id="advanced">
+                        <summary>הגדרות מתקדמות</summary>
+                        <label for="modelSelect" class="field-label">מודל הסימולציה</label>
+                        <select id="modelSelect" class="select">
+                            <option value="auto">אוטומטי (מומלץ)</option>
+                            <option value="machado2009">Machado 2009 לכל הסוגים</option>
+                            <option value="brettel1997">Brettel 1997 לכל הסוגים</option>
+                        </select>
+                        <p id="modelHint" class="hint"></p>
+                    </details>
+                </aside>
+
+                <section id="panel-image" class="stage card" role="tabpanel" aria-labelledby="tab-image">
+                    <div class="stage-toolbar">
+                        <div class="segmented" role="group" aria-label="אופן התצוגה" id="viewSwitch">
+                            <button type="button" class="seg-btn" data-view="split" aria-pressed="true" title="השוואה מפוצלת"><svg aria-hidden="true"><use href="#i-split"/></svg><span class="btn-label">מפוצל</span></button>
+                            <button type="button" class="seg-btn" data-view="side" aria-pressed="false" title="זה לצד זה"><svg aria-hidden="true"><use href="#i-columns"/></svg><span class="btn-label">זה לצד זה</span></button>
+                            <button type="button" class="seg-btn" data-view="grid" aria-pressed="false" title="כל הסוגים"><svg aria-hidden="true"><use href="#i-grid"/></svg><span class="btn-label">כל הסוגים</span></button>
+                        </div>
+                        <div class="toolbar-spacer"></div>
+                        <label class="btn btn-ghost" for="imageInput" title="בחירת תמונה"><svg aria-hidden="true"><use href="#i-upload"/></svg><span class="btn-label">תמונה חדשה</span></label>
+                        <input type="file" id="imageInput" class="visually-hidden" accept="image/*">
+                        <button type="button" id="downloadCompareBtn" class="btn btn-ghost" disabled title="הורדת תמונת השוואה (מקור + סימולציה)"><svg aria-hidden="true"><use href="#i-compare"/></svg><span class="btn-label">תמונת השוואה</span></button>
+                        <button type="button" id="downloadBtn" class="btn btn-primary" disabled title="הורדת התמונה המסומלצת"><svg aria-hidden="true"><use href="#i-download"/></svg><span class="btn-label">הורדה</span></button>
+                    </div>
+
+                    <p id="imageMeta" class="meta" hidden></p>
+
+                    <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="בחירת תמונה או גרירה לכאן">
+                        <div class="dropzone-art" aria-hidden="true">
+                            <span class="dz-swatch" style="--c:#e53935"></span><span class="dz-swatch" style="--c:#43a047"></span><span class="dz-swatch" style="--c:#1e88e5"></span>
+                        </div>
+                        <p class="dropzone-title">גררו תמונה לכאן או לחצו לבחירה</p>
+                        <p class="dropzone-hint">אפשר גם להדביק מהלוח (Ctrl+V) · JPG, PNG, WebP, GIF</p>
+                        <div class="dropzone-actions">
+                            <button type="button" id="sampleBtn" class="btn btn-ghost"><svg aria-hidden="true"><use href="#i-sparkle"/></svg>נסו תמונת דוגמה</button>
+                        </div>
+                    </div>
+
+                    <div id="viewer" class="viewer" data-view="split" hidden>
+                        <figure class="pane pane-original">
+                            <canvas id="originalCanvas" role="img" aria-label="התמונה המקורית"></canvas>
+                            <figcaption class="pane-label label-original">מקור</figcaption>
+                        </figure>
+                        <figure class="pane pane-filtered">
+                            <canvas id="filteredCanvas" role="img" aria-label="התמונה כפי שהיא נראית בסימולציה"></canvas>
+                            <figcaption class="pane-label label-filtered" id="filteredLabel">סימולציה</figcaption>
+                            <div id="busy" class="busy" hidden><span class="spinner" aria-hidden="true"></span><span>מעבד…</span></div>
+                        </figure>
+                        <div class="split-handle" id="splitHandle" role="slider" tabindex="0" aria-label="קו ההשוואה בין המקור לסימולציה" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" aria-valuetext="50%">
+                            <span class="split-knob"><svg aria-hidden="true"><use href="#i-drag"/></svg></span>
+                        </div>
+                    </div>
+
+                    <div id="compareGrid" class="compare-grid" hidden></div>
+                </section>
+
+                <section id="panel-camera" class="stage card" role="tabpanel" aria-labelledby="tab-camera" hidden>
+                    <div class="stage-toolbar">
+                        <button type="button" id="camSplitBtn" class="btn btn-ghost" aria-pressed="false" disabled title="השוואה מפוצלת"><svg aria-hidden="true"><use href="#i-split"/></svg><span class="btn-label">השוואה</span></button>
+                        <button type="button" id="camSwitchBtn" class="btn btn-ghost" hidden title="החלפת מצלמה"><svg aria-hidden="true"><use href="#i-switch"/></svg><span class="btn-label">החלפת מצלמה</span></button>
+                        <button type="button" id="camFullscreenBtn" class="btn btn-ghost" hidden title="מסך מלא"><svg aria-hidden="true"><use href="#i-expand"/></svg><span class="btn-label">מסך מלא</span></button>
+                        <span id="camStats" class="chip" hidden></span>
+                        <div class="toolbar-spacer"></div>
+                        <button type="button" id="camStopBtn" class="btn btn-ghost" hidden title="עצירת המצלמה"><svg aria-hidden="true"><use href="#i-stop"/></svg><span class="btn-label">עצירה</span></button>
+                        <button type="button" id="camCaptureBtn" class="btn btn-primary" disabled title="צילום ומעבר לניתוח"><svg aria-hidden="true"><use href="#i-shutter"/></svg><span class="btn-label">צילום</span></button>
+                    </div>
+
+                    <div id="cameraIntro" class="camera-intro">
+                        <div class="intro-badge" aria-hidden="true"><svg><use href="#i-camera"/></svg></div>
+                        <h2 class="intro-title">ראו את העולם בזמן אמת</h2>
+                        <p class="intro-text">כוונו את מצלמת הטלפון לסביבה — רמזור, פירות, מפה או גרף — וראו מיד כיצד הם נראים עם סוג הראייה שבחרתם.</p>
+                        <button type="button" id="camStartBtn" class="btn btn-primary btn-lg"><svg aria-hidden="true"><use href="#i-play"/></svg>הפעלת המצלמה</button>
+                        <p class="privacy"><svg aria-hidden="true"><use href="#i-lock"/></svg>העיבוד מתבצע במכשיר שלכם בלבד. שום תמונה לא נשלחת לשום מקום.</p>
+                        <p id="cameraError" class="alert" role="alert" hidden></p>
+                    </div>
+
+                    <div id="cameraViewer" class="viewer camera-viewer" data-view="full" hidden>
+                        <div class="media-flip" id="mediaFlip">
+                            <video id="camVideo" class="cam-media" playsinline muted autoplay></video>
+                            <canvas id="camCanvas" class="cam-media cam-filtered" role="img" aria-label="תצוגת המצלמה בסימולציה"></canvas>
+                        </div>
+                        <span class="pane-label label-original">מקור</span>
+                        <span class="pane-label label-filtered" id="camFilteredLabel">סימולציה</span>
+                        <div class="split-handle" id="camSplitHandle" role="slider" tabindex="0" aria-label="קו ההשוואה בין המקור לסימולציה" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" aria-valuetext="50%">
+                            <span class="split-knob"><svg aria-hidden="true"><use href="#i-drag"/></svg></span>
+                        </div>
+                    </div>
+
+                    <div class="quick-types" id="quickTypes" role="radiogroup" aria-label="בחירה מהירה של סוג הראייה"></div>
+                </section>
             </div>
+        </main>
 
-            <div class="slider-container">
-                <label for="severitySlider">עוצמה:</label>
-                <input type="range" id="severitySlider" min="0" max="100" value="100">
-                <span class="severity-label" id="severityValue">100%</span>
-            </div>
-
-            <label class="toggle-container">
-                <input type="checkbox" id="compareAllToggle">
-                <span>השוואת כל הסוגים</span>
-            </label>
-
-            <div class="action-buttons">
-                <button type="button" id="downloadBtn" class="btn btn-primary" disabled>הורדת תמונה</button>
-                <button type="button" id="resetBtn" class="btn btn-secondary" disabled>איפוס</button>
-            </div>
-        </div>
-
-        <p id="errorMessage" class="error-message" role="alert" hidden></p>
-        <p id="fileInfo" class="file-info" hidden></p>
-
-        <label id="dropzone" for="imageInput" class="dropzone tech-frame" tabindex="0">
-            <div class="dropzone-content">
-                <div class="dropzone-icon" aria-hidden="true">🖼️</div>
-                <p>גררו ושחררו תמונה לכאן, או לחצו לבחירת קובץ</p>
-                <p class="dropzone-hint">אפשר גם להדביק תמונה מהלוח (Ctrl+V)</p>
-            </div>
-        </label>
-
-        <div id="imageContainer" class="image-container" hidden>
-            <div class="image-box tech-frame">
-                <h3>תמונה מקורית</h3>
-                <canvas id="originalCanvas"></canvas>
-            </div>
-            <div class="image-box tech-frame">
-                <h3>תמונה מסוננת</h3>
-                <canvas id="filteredCanvas"></canvas>
-                <div id="spinner" class="spinner" hidden>
-                    <div class="spinner-circle" aria-hidden="true"></div>
-                    <span>מעבד תמונה...</span>
+        <section id="about" class="about card" aria-labelledby="aboutTitle">
+            <h2 id="aboutTitle">על הסימולציה</h2>
+            <div class="about-grid">
+                <div>
+                    <h3>איך זה עובד</h3>
+                    <p>כל פיקסל מומר מ-sRGB לאור ליניארי (לפי התקן IEC 61966-2-1), עובר טרנספורמציה המבוססת על תגובת שלושת סוגי הקונוסים ברשתית (מרחב LMS), ומומר חזרה. החישוב מתבצע במכשיר שלכם — בתמונות במעבד, ובמצלמה החיה על כרטיס המסך (WebGL).</p>
+                </div>
+                <div>
+                    <h3>המודלים</h3>
+                    <p><strong>Machado ואחרים, 2009</strong> — מדמה הסטה ברגישות הספקטרלית של הקונוס, ולכן מתאים גם לצורות החלקיות והנפוצות (פרוטנומליה, דאוטרנומליה). זו הגישה שבה משתמשים כלי הפיתוח של Chrome ו-Firefox.</p>
+                    <p><strong>Brettel, Viénot ו-Mollon, 1997</strong> — הקרנה על שני חצאי-מישורים במרחב LMS. המודל המדויק ביותר לדיכרומטיות, והמתאים ביותר לטריטנופיה.</p>
+                    <p><strong>מונוכרומטיות</strong> — מחושבת לפי הבהירות היחסית (Rec. 709). הצורה החלקית (אכרומטומליה) היא קירוב.</p>
+                </div>
+                <div>
+                    <h3>דיוק ובדיקות</h3>
+                    <p>התוצאות נבדקות אוטומטית מול תמונות הייחוס של ספריית DaltonLens (סטייה של עד יחידה אחת לערוץ), מול טבלאות המקור של Machado, ומול מימוש ייחוס עצמאי. גם הגרסה הרצה על כרטיס המסך נבדקת מול החישוב במעבד.</p>
+                </div>
+                <div>
+                    <h3>חשוב לדעת</h3>
+                    <p>זו סימולציה ולא כלי אבחון. התוצאה תלויה בכיול המסך, וחוויית הראייה משתנה מאדם לאדם. לאבחון פנו לאופטומטריסט או לרופא עיניים.</p>
                 </div>
             </div>
-        </div>
+            <p class="refs">
+                מקורות:
+                <a href="https://doi.org/10.1109/TVCG.2009.113" target="_blank" rel="noopener">Machado, Oliveira &amp; Fernandes (2009)</a> ·
+                <a href="https://doi.org/10.1364/JOSAA.14.002647" target="_blank" rel="noopener">Brettel, Viénot &amp; Mollon (1997)</a> ·
+                <a href="https://daltonlens.org/opensource-cvd-simulation/" target="_blank" rel="noopener">DaltonLens</a>
+            </p>
+        </section>
 
-        <div id="compareGrid" class="compare-grid" hidden></div>
-
-        <footer>הסימולציה מבוססת על המודל הפיזיולוגי של Brettel, Viénot &amp; Mollon (1997) בחישוב צבע מדויק (sRGB עם תיקון גאמה)</footer>
+        <footer class="footer">
+            <span>סימולטור עיוורון צבעים</span>
+            <span aria-hidden="true">·</span>
+            <span>כל העיבוד מתבצע מקומית בדפדפן</span>
+        </footer>
     </div>
 
-    <script>
-        const originalCanvas = document.getElementById('originalCanvas');
-        const filteredCanvas = document.getElementById('filteredCanvas');
-        const imageContainer = document.getElementById('imageContainer');
-        const imageInput = document.getElementById('imageInput');
-        const colorBlindType = document.getElementById('colorBlindType');
-        const severitySlider = document.getElementById('severitySlider');
-        const severityValue = document.getElementById('severityValue');
-        const compareAllToggle = document.getElementById('compareAllToggle');
-        const compareGrid = document.getElementById('compareGrid');
-        const dropzone = document.getElementById('dropzone');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const fileInfo = document.getElementById('fileInfo');
-        const errorMessage = document.getElementById('errorMessage');
-        const spinner = document.getElementById('spinner');
-        const themeToggle = document.getElementById('themeToggle');
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
-        let originalImage = null;
-        let currentFileName = '';
-        let errorTimeoutId = null;
-
-        // ---------------------------------------------------------------
-        // Theme (dark / light, persisted)
-        // ---------------------------------------------------------------
-
-        function setTheme(theme) {
-            document.documentElement.setAttribute('data-theme', theme);
-            try { localStorage.setItem('cbSimTheme', theme); } catch (e) { /* storage unavailable */ }
-            themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
-            themeToggle.setAttribute('aria-label', theme === 'dark' ? 'עבור למצב תצוגה בהיר' : 'עבור למצב תצוגה כהה');
-        }
-        setTheme(document.documentElement.getAttribute('data-theme') || 'dark');
-        themeToggle.addEventListener('click', () => {
-            const current = document.documentElement.getAttribute('data-theme');
-            setTheme(current === 'dark' ? 'light' : 'dark');
-        });
-
-        // ---------------------------------------------------------------
-        // Color science: physiologically-based CVD simulation
-        // (Brettel, Viénot & Mollon 1997 two-plane LMS projection model,
-        // applied in linear-light sRGB space with correct gamma handling)
-        // ---------------------------------------------------------------
-
-        const BRETTEL_PARAMS = {
-            protanopia: {
-                m1: [0.14980, 1.19548, -0.34528, 0.10764, 0.84864, 0.04372, 0.00384, -0.00540, 1.00156],
-                m2: [0.14570, 1.16172, -0.30742, 0.10816, 0.85291, 0.03892, 0.00386, -0.00524, 1.00139],
-                n: [0.00048, 0.00393, -0.00441]
-            },
-            deuteranopia: {
-                m1: [0.36477, 0.86381, -0.22858, 0.26294, 0.64245, 0.09462, -0.02006, 0.02728, 0.99278],
-                m2: [0.37298, 0.88166, -0.25464, 0.25954, 0.63506, 0.10540, -0.01980, 0.02784, 0.99196],
-                n: [-0.00281, -0.00611, 0.00892]
-            },
-            tritanopia: {
-                m1: [1.01277, 0.13548, -0.14826, -0.01243, 0.86812, 0.14431, 0.07589, 0.80500, 0.11911],
-                m2: [0.93678, 0.18979, -0.12657, 0.06154, 0.81526, 0.12320, -0.37562, 1.12767, 0.24796],
-                n: [0.03901, -0.02788, -0.01113]
-            }
-        };
-
-        // Rec. 709 relative luminance, used for achromatopsia (monochromacy).
-        const LUMINANCE_WEIGHTS = [0.2126, 0.7152, 0.0722];
-
-        // 8-bit sRGB -> linear-light lookup table.
-        const SRGB_TO_LINEAR = new Float32Array(256);
-        for (let i = 0; i < 256; i++) {
-            const c = i / 255;
-            SRGB_TO_LINEAR[i] = c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-        }
-
-        // Linear-light -> 8-bit sRGB lookup table (12-bit resolution, plenty for 8-bit output).
-        const LINEAR_TO_SRGB_STEPS = 4096;
-        const LINEAR_TO_SRGB = new Uint8ClampedArray(LINEAR_TO_SRGB_STEPS);
-        for (let i = 0; i < LINEAR_TO_SRGB_STEPS; i++) {
-            const c = i / (LINEAR_TO_SRGB_STEPS - 1);
-            const s = c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
-            LINEAR_TO_SRGB[i] = Math.round(Math.min(1, Math.max(0, s)) * 255);
-        }
-        function linearToSrgbByte(c) {
-            const idx = Math.round(Math.min(1, Math.max(0, c)) * (LINEAR_TO_SRGB_STEPS - 1));
-            return LINEAR_TO_SRGB[idx];
-        }
-
-        /**
-         * Applies a color vision deficiency filter directly to ImageData in place.
-         * `type` is 'normal' | 'protanopia' | 'deuteranopia' | 'tritanopia' | 'achromatopsia'.
-         * `severityPercent` (0-100) blends between unaffected and fully-affected vision,
-         * matching how anomalous trichromacy (e.g. protanomaly) sits between normal
-         * vision and full dichromacy.
-         */
-        function applyColorBlindFilter(imageData, type, severityPercent) {
-            if (type === 'normal' || severityPercent <= 0) return imageData;
-            const severity = Math.min(100, severityPercent) / 100;
-            const data = imageData.data;
-            const brettel = BRETTEL_PARAMS[type];
-
-            for (let i = 0; i < data.length; i += 4) {
-                const r = SRGB_TO_LINEAR[data[i]];
-                const g = SRGB_TO_LINEAR[data[i + 1]];
-                const b = SRGB_TO_LINEAR[data[i + 2]];
-
-                let simR, simG, simB;
-                if (type === 'achromatopsia') {
-                    const y = r * LUMINANCE_WEIGHTS[0] + g * LUMINANCE_WEIGHTS[1] + b * LUMINANCE_WEIGHTS[2];
-                    simR = simG = simB = y;
-                } else {
-                    const dot = r * brettel.n[0] + g * brettel.n[1] + b * brettel.n[2];
-                    const m = dot >= 0 ? brettel.m1 : brettel.m2;
-                    simR = r * m[0] + g * m[1] + b * m[2];
-                    simG = r * m[3] + g * m[4] + b * m[5];
-                    simB = r * m[6] + g * m[7] + b * m[8];
-                }
-
-                data[i] = linearToSrgbByte(simR * severity + r * (1 - severity));
-                data[i + 1] = linearToSrgbByte(simG * severity + g * (1 - severity));
-                data[i + 2] = linearToSrgbByte(simB * severity + b * (1 - severity));
-            }
-            return imageData;
-        }
-
-        // ---------------------------------------------------------------
-        // UI wiring
-        // ---------------------------------------------------------------
-
-        const DEFICIENCY_TYPES = [
-            { key: 'protanopia', label: 'פרוטנופיה' },
-            { key: 'deuteranopia', label: 'דאוטרנופיה' },
-            { key: 'tritanopia', label: 'טריטנופיה' },
-            { key: 'achromatopsia', label: 'אכרומטופסיה' }
-        ];
-
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.hidden = false;
-            clearTimeout(errorTimeoutId);
-            errorTimeoutId = setTimeout(() => { errorMessage.hidden = true; }, 4000);
-        }
-
-        function showSpinner(visible) {
-            spinner.hidden = !visible;
-        }
-
-        function loadImageFile(file) {
-            if (!file || !file.type || !file.type.startsWith('image/')) {
-                showError('אנא בחרו קובץ תמונה תקין (JPG, PNG, GIF וכדומה)');
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const img = new Image();
-                img.onload = () => {
-                    originalImage = img;
-                    currentFileName = file.name || 'image';
-                    onImageLoaded();
-                };
-                img.onerror = () => showError('לא ניתן היה לטעון את התמונה');
-                img.src = event.target.result;
-            };
-            reader.onerror = () => showError('לא ניתן היה לקרוא את הקובץ');
-            reader.readAsDataURL(file);
-        }
-
-        function onImageLoaded() {
-            dropzone.hidden = true;
-            imageContainer.hidden = false;
-            downloadBtn.disabled = false;
-            resetBtn.disabled = false;
-            fileInfo.hidden = false;
-            fileInfo.textContent = `${currentFileName} — ${originalImage.width}×${originalImage.height} פיקסלים`;
-            processImage();
-        }
-
-        function processImage() {
-            if (!originalImage) return;
-            showSpinner(true);
-            setTimeout(() => {
-                originalCanvas.width = originalImage.width;
-                originalCanvas.height = originalImage.height;
-                originalCanvas.getContext('2d').drawImage(originalImage, 0, 0);
-
-                filteredCanvas.width = originalImage.width;
-                filteredCanvas.height = originalImage.height;
-                const ctx = filteredCanvas.getContext('2d');
-                ctx.drawImage(originalImage, 0, 0);
-
-                const imageData = ctx.getImageData(0, 0, filteredCanvas.width, filteredCanvas.height);
-                applyColorBlindFilter(imageData, colorBlindType.value, Number(severitySlider.value));
-                ctx.putImageData(imageData, 0, 0);
-
-                updateCompareGrid();
-                showSpinner(false);
-            }, 10);
-        }
-
-        function updateCompareGrid() {
-            if (!compareAllToggle.checked || !originalImage) {
-                compareGrid.hidden = true;
-                return;
-            }
-            compareGrid.hidden = false;
-            compareGrid.innerHTML = '';
-
-            const maxDim = 260;
-            const scale = Math.min(1, maxDim / Math.max(originalImage.width, originalImage.height));
-            const w = Math.max(1, Math.round(originalImage.width * scale));
-            const h = Math.max(1, Math.round(originalImage.height * scale));
-            const severity = Number(severitySlider.value);
-
-            DEFICIENCY_TYPES.forEach(({ key, label }) => {
-                const box = document.createElement('div');
-                box.className = 'compare-box';
-
-                const heading = document.createElement('h4');
-                heading.textContent = label;
-
-                const canvas = document.createElement('canvas');
-                canvas.width = w;
-                canvas.height = h;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(originalImage, 0, 0, w, h);
-                const imageData = ctx.getImageData(0, 0, w, h);
-                applyColorBlindFilter(imageData, key, severity);
-                ctx.putImageData(imageData, 0, 0);
-
-                box.appendChild(heading);
-                box.appendChild(canvas);
-                compareGrid.appendChild(box);
-            });
-        }
-
-        function resetAll() {
-            originalImage = null;
-            currentFileName = '';
-            imageInput.value = '';
-            imageContainer.hidden = true;
-            compareGrid.hidden = true;
-            dropzone.hidden = false;
-            downloadBtn.disabled = true;
-            resetBtn.disabled = true;
-            fileInfo.hidden = true;
-            originalCanvas.getContext('2d').clearRect(0, 0, originalCanvas.width, originalCanvas.height);
-            filteredCanvas.getContext('2d').clearRect(0, 0, filteredCanvas.width, filteredCanvas.height);
-        }
-
-        // File selection
-        imageInput.addEventListener('change', (e) => loadImageFile(e.target.files[0]));
-
-        // Drag & drop
-        window.addEventListener('dragover', (e) => e.preventDefault());
-        window.addEventListener('drop', (e) => e.preventDefault());
-
-        ['dragenter', 'dragover'].forEach((evt) => {
-            dropzone.addEventListener(evt, (e) => {
-                e.preventDefault();
-                dropzone.classList.add('dragover');
-            });
-        });
-        ['dragleave', 'drop'].forEach((evt) => {
-            dropzone.addEventListener(evt, (e) => {
-                e.preventDefault();
-                dropzone.classList.remove('dragover');
-            });
-        });
-        dropzone.addEventListener('drop', (e) => {
-            const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-            if (file) loadImageFile(file);
-        });
-        dropzone.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                imageInput.click();
-            }
-        });
-
-        // Paste from clipboard
-        window.addEventListener('paste', (e) => {
-            const items = e.clipboardData && e.clipboardData.items;
-            if (!items) return;
-            const item = Array.from(items).find((i) => i.type && i.type.startsWith('image/'));
-            if (item) loadImageFile(item.getAsFile());
-        });
-
-        // Controls
-        colorBlindType.addEventListener('change', processImage);
-
-        let severityRafId = null;
-        severitySlider.addEventListener('input', (e) => {
-            severityValue.textContent = `${e.target.value}%`;
-            if (severityRafId) cancelAnimationFrame(severityRafId);
-            severityRafId = requestAnimationFrame(processImage);
-        });
-
-        compareAllToggle.addEventListener('change', updateCompareGrid);
-
-        downloadBtn.addEventListener('click', () => {
-            filteredCanvas.toBlob((blob) => {
-                if (!blob) return;
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `filtered-${colorBlindType.value}-${currentFileName || 'image'}.png`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                URL.revokeObjectURL(url);
-            });
-        });
-
-        resetBtn.addEventListener('click', resetAll);
-    </script>
+    <script src="assets/js/cvd.js"></script>
+    <script src="assets/js/gl-renderer.js"></script>
+    <script src="assets/js/app.js"></script>
 </body>
 </html>
